@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "career-quest-backend"
+version = "0.1.0"
+description = "Career Quest API and recommendation engine"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<6.1",
+    "djangorestframework>=3.16,<4",
+    "django-cors-headers>=4.7,<5",
+    "drf-spectacular>=0.28,<1",
+    "psycopg[binary]>=3.2,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<10",
+    "pytest-django>=4.10,<5",
+    "ruff>=0.11,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["apps*", "config*"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "tests.py"]
+addopts = "--strict-markers --disable-warnings"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
+ignore = ["DJ001"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/*.py" = ["E501"]

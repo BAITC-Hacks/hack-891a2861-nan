@@ -1,4 +1,22 @@
-# hack-891a2861-nan
-Hackathon team repository for NAN
+# Career Quest
 
-push 1
+AI-навигатор развития сотрудников для трека Halyk Bank на HackAlem AI.
+
+Система строит карьерную траекторию, находит разрывы между текущими навыками и требованиями следующего грейда, предлагает 1–3 активности и объясняет выбор на основе грейда, skill gaps, истории участия и требований следующего уровня.
+
+## Статус
+
+Сейчас сформирована архитектура решения. Исходный код и стартовый датасет будут добавлены на следующем этапе.
+
+- [Архитектура решения](docs/ARCHITECTURE.md)
+- [High-Level System Design](docs/SYSTEM_DESIGN.md)
+- [Решения и компромиссы](docs/DECISIONS.md)
+
+## Планируемый запуск
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+После запуска: UI — `http://localhost:3000`, API/OpenAPI — `http://localhost:8000/docs`.
