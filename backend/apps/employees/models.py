@@ -12,6 +12,11 @@ class Employee(models.Model):
     grade = models.ForeignKey(Grade, on_delete=models.PROTECT, related_name="employees")
     tenure_months = models.PositiveIntegerField(default=0)
     organisation_unit = models.CharField(max_length=128, blank=True)
+    manager_id = models.CharField(max_length=64, null=True, blank=True)
+    hire_date = models.DateField(null=True, blank=True)
+    work_format = models.CharField(max_length=16, blank=True)
+    career_goal = models.JSONField(null=True, blank=True)
+    last_review_date = models.DateField(null=True, blank=True)
     locale = models.CharField(max_length=2, default="ru")
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

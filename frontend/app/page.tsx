@@ -1,45 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 import { useLocale } from "@/components/locale-provider";
-import { api } from "@/lib/api";
-import type { EmployeeSummary } from "@/lib/types";
 
-export default function HomePage() {
-  const { t } = useLocale();
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api.employees().then(setEmployees).catch((reason) => setError(String(reason)));
-  }, []);
-
-  return (
-    <div className="page shell">
-      <section className="hero">
-        <div>
-          <span className="eyebrow">Halyk · HackAlem AI</span>
-          <h1>{t.chooseProfile}</h1>
-          <p>{t.subtitle}</p>
-        </div>
-        <div className="hero-orbit" aria-hidden="true"><span>AI</span></div>
-      </section>
-      {error && <div className="error-banner">{t.error}: {error}</div>}
-      <section className="profile-grid">
-        {employees.map((employee, index) => (
-          <Link className="profile-card" href={`/employee/${employee.employee_id}`} key={employee.employee_id}>
-            <span className={`avatar avatar-${(index % 4) + 1}`}>{employee.display_name.split(" ").map((x) => x[0]).join("")}</span>
-            <div>
-              <strong>{employee.display_name}</strong>
-              <p>{employee.role} · {employee.grade}</p>
-              <small>{employee.employee_id} · {employee.tenure_months} months</small>
-            </div>
-            <span className="arrow">→</span>
-          </Link>
-        ))}
-        {!employees.length && !error && <p className="muted">{t.loading}</p>}
-      </section>
-    </div>
-  );
+export default function LandingPage() {
+  const { locale } = useLocale();
+  const { user } = useAuth();
+  const destination = user?.role === "employee" && user.employee_id ? `/employee/${user.employee_id}` : "/hr";
+  return <div className="landing">
+    <section className="landing-hero shell">
+      <div className="landing-copy"><span className="eyebrow">Halyk · HackAlem AI</span><h1>{locale === "ru" ? "Ваш рост больше не случаен" : "Your growth is no longer accidental"}</h1><p>{locale === "ru" ? "Career Quest превращает разрозненные HR-активности в понятную траекторию к следующему грейду." : "Career Quest turns scattered HR activities into a clear, evidence-backed path to your next grade."}</p><Link className="landing-cta" href={user ? destination : "/login"}>{user ? (locale === "ru" ? "Продолжить" : "Continue") : (locale === "ru" ? "Войти в Career Quest" : "Sign in to Career Quest")} <span>→</span></Link></div>
+      <div className="career-visual"><div className="visual-card card-one"><small>01 · PROFILE</small><strong>Middle</strong><span>Current grade</span></div><div className="visual-line" /><div className="visual-card card-two"><small>AI NEXT STEP</small><strong>System Design</strong><span>Evidence-backed</span></div><div className="visual-line" /><div className="visual-card card-three"><small>TARGET</small><strong>Senior</strong><span>78% ready</span></div></div>
+    </section>
+    <section className="value-strip"><div className="shell value-grid"><div><strong>4</strong><span>{locale === "ru" ? "фактора в каждом решении" : "factors in every decision"}</span></div><div><strong>&lt; 2s</strong><span>{locale === "ru" ? "базовая рекомендация" : "baseline recommendation"}</span></div><div><strong>100%</strong><span>{locale === "ru" ? "проверяемые объяснения" : "traceable explanations"}</span></div></div></section>
+  </div>;
 }

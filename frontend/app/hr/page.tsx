@@ -2,15 +2,24 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
 import { useLocale } from "@/components/locale-provider";
 import { api } from "@/lib/api";
 import type { HRDashboard } from "@/lib/types";
 
 export default function HRPage() {
   const { locale, t } = useLocale();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<HRDashboard | null>(null);
   const [error, setError] = useState("");
-  useEffect(() => { api.dashboard(locale).then(setData).catch((reason) => setError(String(reason))); }, [locale]);
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role === "employee") { if (user.employee_id) router.replace(`/employee/${user.employee_id}`); return; }
+    api.dashboard(locale).then(setData).catch((reason) => setError(String(reason)));
+  }, [loading, locale, router, user]);
   if (!data) return <div className="page shell"><p>{error || t.loading}</p></div>;
   const maxGap = Math.max(...data.top_skill_gaps.map((item) => item.employees), 1);
   return <div className="page shell">

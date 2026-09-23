@@ -8,4 +8,4 @@ cp .env.example .env.local
 npm run dev
 ```
 
-The app runs at `http://localhost:3000` and expects the backend at `http://localhost:8000` by default.
+The app runs at `http://localhost:3000` and expects the backend at `http://localhost:18000` by default.

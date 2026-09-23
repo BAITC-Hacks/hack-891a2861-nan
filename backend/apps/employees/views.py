@@ -5,7 +5,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsAuthenticatedOrDemo, can_access_employee
+from apps.core.permissions import IsAuthenticatedOrDemo, IsHROrDemo, can_access_employee
 from apps.employees.models import Employee
 from apps.employees.serializers import (
     ActivitySerializer,
@@ -21,7 +21,7 @@ def request_locale(request) -> str:
 
 
 class EmployeeListView(APIView):
-    permission_classes = [IsAuthenticatedOrDemo]
+    permission_classes = [IsHROrDemo]
 
     @extend_schema(
         operation_id="employee_list",

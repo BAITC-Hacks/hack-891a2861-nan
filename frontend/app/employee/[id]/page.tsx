@@ -1,6 +1,8 @@
 "use client";
 
 import { use, useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
 import { ProgressRing } from "@/components/progress-ring";
 import { useLocale } from "@/components/locale-provider";
 import { api } from "@/lib/api";
@@ -8,6 +10,8 @@ import type { EmployeeProfile, Recommendation } from "@/lib/types";
 
 export default function EmployeePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { locale, t } = useLocale();
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -15,6 +19,7 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
+    if (!user || user.role !== "employee" || user.employee_id !== id) return;
     setError("");
     try {
       const [employee, result] = await Promise.all([
@@ -26,13 +31,17 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
     } catch (reason) {
       setError(String(reason));
     }
-  }, [id, locale]);
+  }, [id, locale, user]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "employee") { router.replace("/hr"); return; }
+    if (user.employee_id !== id && user.employee_id) { router.replace(`/employee/${user.employee_id}`); return; }
     // Network results update the page state after the request resolves.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
-  }, [load]);
+  }, [authLoading, id, load, router, user]);
 
   async function complete(eventId: string) {
     setBusy(eventId);

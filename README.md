@@ -18,12 +18,17 @@ docker compose up --build
 Open:
 
 - Web application: http://localhost:3000
-- API documentation: http://localhost:8000/api/docs/
-- Django Admin: http://localhost:8000/admin/
+- API documentation: http://localhost:18000/api/docs/
+- Django Admin: http://localhost:18000/admin/
 
-Demo Admin credentials are `admin` / `careerquest-demo`. They exist only in the synthetic demo seed and must not be used in a real deployment.
+Demo sign-in credentials:
 
-The first launch applies migrations and loads a small synthetic demonstration dataset. Later launches preserve PostgreSQL data and do not reset completed activities.
+- HR: `hr` / `hr-demo`
+- Employee: `e0001` / `employee-demo` (any official employee ID, lower-case, uses the same demo password)
+
+These credentials are only for the synthetic hackathon dataset and must not be used in a real deployment.
+
+The first launch applies migrations, loads the supplied Career Quest starter dataset (200 employees, 60 skills, 40 activities and 24 months of history), and creates role-linked demo accounts. Later launches preserve PostgreSQL data and do not reset completed activities.
 
 LLM credentials are optional. Without them, the evidence-grounded deterministic decision engine provides the complete MVP flow. To enable multilingual LLM-enhanced explanations, configure an OpenAI-compatible provider in `.env`:
 
@@ -35,13 +40,13 @@ LLM_MODEL=...
 
 ## Demonstration flow
 
-1. Open employee `E0028`.
+1. Sign in as employee `e0028` with password `employee-demo`.
 2. Review the Middle → Senior trajectory and skill gaps.
 3. Inspect the top recommendation and its grade, gap, impact and history evidence.
 4. Notice that Public Speaking is the lowest skill but is penalised after three similar skips; critical System Design work ranks higher.
 5. Complete an activity and observe the skill level and readiness update.
-6. Open HR Overview to inspect common gaps, recommendation coverage and activity participation.
-7. Open Import Data to upload additional judge profiles in the starter-kit-compatible format.
+6. Sign out, then sign in as `hr` / `hr-demo` to inspect common gaps, recommendation coverage and activity participation.
+7. As HR, open Import Data to upload additional judge profiles in the starter-kit-compatible format.
 
 ## Implemented MVP requirements
 
@@ -113,7 +118,7 @@ source .venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
 python manage.py migrate
-python manage.py seed_demo --if-empty
+python manage.py load_starter_data --if-empty --path ../data/starter
 python manage.py runserver
 ```
 
@@ -135,7 +140,7 @@ cd frontend && npm run lint && npx tsc --noEmit && npm run build
 
 ## Production note
 
-`DJANGO_DEMO_MODE=true` is intentionally enabled in Compose for jury access. A real deployment must set it to `false`, connect corporate OIDC/JWT authentication and enforce HR organisational scopes. The custom user model and server-side permission boundary are already prepared for that integration.
+Compose runs with `DJANGO_DEMO_MODE=false`: signed authentication and employee/HR authorization are enforced by the backend. A real deployment should replace the hackathon credentials with corporate OIDC/JWT and add HR organisational scopes. The custom user model and server-side permission boundary are prepared for that integration.
 
 ---
 
@@ -155,19 +160,24 @@ docker compose up --build
 После запуска:
 
 - интерфейс: http://localhost:3000
-- Swagger/OpenAPI: http://localhost:8000/api/docs/
-- Django Admin: http://localhost:8000/admin/
+- Swagger/OpenAPI: http://localhost:18000/api/docs/
+- Django Admin: http://localhost:18000/admin/
 
-Демоданные создаются при первом запуске и не перезаписываются при повторном. LLM-ключ не обязателен: без него полный core flow работает на детерминированном explainable engine.
+При первом запуске загружается официальный синтетический датасет и создаются ролевые аккаунты. Повторный запуск не перезаписывает прогресс. LLM-ключ не обязателен: без него полный core flow работает на детерминированном explainable engine.
+
+Аккаунты для демонстрации:
+
+- HR: `hr` / `hr-demo`
+- сотрудник: `e0001` / `employee-demo` (можно использовать любой ID сотрудника в нижнем регистре)
 
 ### Что показать жюри
 
-1. Открыть `E0028`.
+1. Войти как `e0028` / `employee-demo`.
 2. Показать траекторию Middle → Senior.
 3. Раскрыть «Почему этот шаг»: грейд, gap, эффект и история.
 4. Обратить внимание: Public Speaking ниже всего, но после трёх пропусков и при критичном System Design он не становится top-1.
 5. Завершить активность и показать новые skill level и readiness.
-6. Открыть HR-экран и импорт проверочных профилей.
+6. Выйти и войти как `hr` / `hr-demo`, затем показать HR-экран и импорт проверочных профилей.
 
 ### Ключевое решение
 

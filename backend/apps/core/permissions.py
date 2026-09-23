@@ -14,6 +14,13 @@ class IsHROrDemo(BasePermission):
         return bool(request.user.is_authenticated and request.user.role in {"hr", "admin"})
 
 
+class IsEmployeeOrDemo(BasePermission):
+    def has_permission(self, request, view) -> bool:
+        if getattr(settings, "DEMO_MODE", False):
+            return True
+        return bool(request.user.is_authenticated and request.user.role == "employee")
+
+
 def can_access_employee(request, employee_id: str) -> bool:
     if getattr(settings, "DEMO_MODE", False):
         role = request.headers.get("X-Demo-Role", "employee")

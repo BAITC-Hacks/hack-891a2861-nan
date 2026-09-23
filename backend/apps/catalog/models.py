@@ -85,15 +85,13 @@ class GradeRequirement(models.Model):
 
 class Event(LocalizedModel):
     class Format(models.TextChoices):
-        COURSE = "course", "Course"
-        WORKSHOP = "workshop", "Workshop"
-        MENTORING = "mentoring", "Mentoring"
-        PROJECT = "project", "Project"
-        ASSESSMENT = "assessment", "Assessment"
+        ONLINE = "online", "Online"
+        OFFLINE = "offline", "Offline"
+        SELF_PACED = "self_paced", "Self-paced"
 
     code = models.CharField(max_length=64, primary_key=True)
     event_type = models.CharField(max_length=64)
-    format = models.CharField(max_length=16, choices=Format.choices, default=Format.COURSE)
+    format = models.CharField(max_length=16, choices=Format.choices, default=Format.ONLINE)
     description_en = models.TextField(blank=True)
     description_ru = models.TextField(blank=True)
     description_kk = models.TextField(blank=True)
@@ -101,6 +99,8 @@ class Event(LocalizedModel):
     is_active = models.BooleanField(default=True)
     is_mandatory = models.BooleanField(default=False)
     repeatable = models.BooleanField(default=False)
+    prerequisites = models.JSONField(default=dict, blank=True)
+    upcoming_sessions = models.JSONField(default=list, blank=True)
     available_from = models.DateField(null=True, blank=True)
     available_until = models.DateField(null=True, blank=True)
     audience_roles = models.ManyToManyField(Role, blank=True, related_name="events")

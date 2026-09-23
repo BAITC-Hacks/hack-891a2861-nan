@@ -56,6 +56,9 @@ def _eligible_events(employee: Employee) -> list[Event]:
             continue
         if event.code in completed_ids and not event.repeatable:
             continue
+        levels = dict(employee.skill_levels.values_list("skill_id", "level"))
+        if any(levels.get(code, 0) < level for code, level in event.prerequisites.items()):
+            continue
         eligible.append(event)
     return eligible
 
@@ -102,7 +105,12 @@ def recommend(
     format_skipped = Counter(
         item.event.format
         for item in history
-        if item.status in {ActivityHistory.Status.MISSED, ActivityHistory.Status.DECLINED}
+        if item.status
+        in {
+            ActivityHistory.Status.NO_SHOW,
+            ActivityHistory.Status.DROPPED,
+            ActivityHistory.Status.DECLINED,
+        }
     )
     completed_total = sum(format_completed.values())
     skipped_total = sum(format_skipped.values())
@@ -149,7 +157,12 @@ def recommend(
             item.status == ActivityHistory.Status.COMPLETED for item in similar_history
         )
         similar_skipped = sum(
-            item.status in {ActivityHistory.Status.MISSED, ActivityHistory.Status.DECLINED}
+            item.status
+            in {
+                ActivityHistory.Status.NO_SHOW,
+                ActivityHistory.Status.DROPPED,
+                ActivityHistory.Status.DECLINED,
+            }
             for item in similar_history
         )
         format_success = format_completed[event.format]

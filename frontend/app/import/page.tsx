@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
 import { useLocale } from "@/components/locale-provider";
 import { api } from "@/lib/api";
 
@@ -13,9 +15,16 @@ const fields = [
 
 export default function ImportPage() {
   const { locale, t } = useLocale();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (loading) return;
+    if (!user) router.replace("/login");
+    else if (user.role === "employee" && user.employee_id) router.replace(`/employee/${user.employee_id}`);
+  }, [loading, router, user]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(""); setMessage("");
     try { const result = await api.importDataset(new FormData(event.currentTarget)); setMessage(`${t.imported}: ${Object.entries(result.counts).map(([key,value]) => `${key} ${value}`).join(", ")}`); }

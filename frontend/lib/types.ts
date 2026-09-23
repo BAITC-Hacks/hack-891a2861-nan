@@ -1,5 +1,13 @@
 export type Locale = "en" | "ru";
 
+export interface AuthUser {
+  id: number;
+  username: string;
+  role: "employee" | "hr" | "admin";
+  employee_id: string | null;
+  display_name: string;
+}
+
 export interface EmployeeSummary {
   employee_id: string;
   display_name: string;

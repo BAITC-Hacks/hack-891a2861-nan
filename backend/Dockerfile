@@ -17,4 +17,4 @@ RUN DJANGO_SECRET_KEY=build-only python manage.py collectstatic --noinput
 USER app
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py seed_demo --if-empty && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 30"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py load_starter_data --if-empty --path /data/starter && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 30"]

@@ -10,8 +10,11 @@ class ActivityHistory(models.Model):
     class Status(models.TextChoices):
         REGISTERED = "registered", "Registered"
         COMPLETED = "completed", "Completed"
-        MISSED = "missed", "Missed"
+        IN_PROGRESS = "in_progress", "In progress"
+        DROPPED = "dropped", "Dropped"
+        NO_SHOW = "no_show", "No show"
         DECLINED = "declined", "Declined"
+        OVERDUE = "overdue", "Overdue"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="activities")
@@ -19,6 +22,11 @@ class ActivityHistory(models.Model):
     status = models.CharField(max_length=16, choices=Status.choices)
     occurred_at = models.DateTimeField()
     completed_on_time = models.BooleanField(null=True, blank=True)
+    completion_pct = models.PositiveSmallIntegerField(default=0)
+    score = models.PositiveSmallIntegerField(null=True, blank=True)
+    feedback_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    assigned_by = models.CharField(max_length=16, blank=True)
+    external_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
     idempotency_key = models.CharField(max_length=128, null=True, blank=True, unique=True)
     source = models.CharField(max_length=32, default="dataset")
     created_at = models.DateTimeField(auto_now_add=True)

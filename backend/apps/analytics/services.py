@@ -36,7 +36,7 @@ def dashboard(locale: str = "en") -> dict:
         .annotate(
             total=Count("id"),
             completed=Count("id", filter=Q(status=ActivityHistory.Status.COMPLETED)),
-            missed=Count("id", filter=Q(status=ActivityHistory.Status.MISSED)),
+            missed=Count("id", filter=Q(status=ActivityHistory.Status.NO_SHOW)),
             declined=Count("id", filter=Q(status=ActivityHistory.Status.DECLINED)),
         )
         .order_by("-total")

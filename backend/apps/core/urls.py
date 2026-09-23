@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.activities.views import CompleteActivityView
+from apps.accounts.views import LoginView, MeView
 from apps.analytics.views import HRDashboardView
 from apps.employees.views import EmployeeDetailView, EmployeeListView
 from apps.imports.views import DatasetImportView
@@ -12,6 +13,8 @@ urlpatterns = [
     path("health/live/", HealthLiveView.as_view(), name="health-live"),
     path("health/ready/", HealthReadyView.as_view(), name="health-ready"),
     path("meta/", MetaView.as_view(), name="meta"),
+    path("auth/login/", LoginView.as_view(), name="auth-login"),
+    path("auth/me/", MeView.as_view(), name="auth-me"),
     path("employees/", EmployeeListView.as_view(), name="employee-list"),
     path("employees/<str:employee_id>/", EmployeeDetailView.as_view(), name="employee-detail"),
     path(

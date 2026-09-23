@@ -18,7 +18,7 @@ services:
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-hackathon-demo-secret-change-me}
       DJANGO_DEBUG: "false"
-      DJANGO_DEMO_MODE: "true"
+      DJANGO_DEMO_MODE: "false"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
       DJANGO_CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-3000}
       DJANGO_DB_ENGINE: postgres
@@ -31,7 +31,9 @@ services:
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-18000}:8000"
+    volumes:
+      - ./data/starter:/data/starter:ro
     depends_on:
       db:
         condition: service_healthy
@@ -45,7 +47,7 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-8000}/api/v1
+        NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-18000}/api/v1
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
