@@ -86,6 +86,20 @@ export interface Recommendation {
   };
 }
 
+export interface RecommendationExplanation {
+  recommendations: Array<{
+    event_id: string;
+    rank: number;
+    title: string;
+    headline: string;
+    why_recommended: string;
+    expected_impact: string;
+    history_context: string | null;
+    next_step: string;
+  }>;
+  overall_summary: string;
+}
+
 export interface HRDashboard {
   summary: { employees: number; completion_rate: number; employees_without_step: number };
   top_skill_gaps: Array<{ skill_code: string; skill_name: string; employees: number }>;

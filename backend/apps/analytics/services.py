@@ -24,7 +24,7 @@ def dashboard(locale: str = "en") -> dict:
                 if current.get(requirement.skill_id, 0) < requirement.required_level:
                     gap_counts[requirement.skill_id] += 1
                     gap_names[requirement.skill_id] = requirement.skill.localized_name(locale)
-        if not recommend(employee, locale, limit=1, persist=False, use_llm=False):
+        if not recommend(employee, locale, limit=1, persist=False):
             without_steps.append(
                 {"employee_id": employee.employee_id, "display_name": employee.display_name}
             )

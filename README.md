@@ -30,12 +30,11 @@ These credentials are only for the synthetic hackathon dataset and must not be u
 
 The first launch applies migrations, loads the supplied Career Quest starter dataset (200 employees, 60 skills, 40 activities and 24 months of history), and creates role-linked demo accounts. Later launches preserve PostgreSQL data and do not reset completed activities.
 
-LLM credentials are optional. Without them, the evidence-grounded deterministic decision engine provides the complete MVP flow. To enable multilingual LLM-enhanced explanations, configure an OpenAI-compatible provider in `.env`:
+OpenAI credentials are optional. Without them, the deterministic recommendation engine and explanation fallback provide the complete MVP flow. To enable OpenAI explanations, configure the root `.env`:
 
 ```dotenv
-LLM_BASE_URL=https://your-provider.example/v1
-LLM_API_KEY=...
-LLM_MODEL=...
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 ## Demonstration flow
@@ -87,7 +86,31 @@ Base score:
 - repetition penalty
 ```
 
-An LLM never creates an activity, changes a skill level, or performs progress arithmetic. It receives no employee name or identifier and may only phrase the supplied evidence. Timeout, invalid JSON or an unsupported claim activates the deterministic fallback.
+An LLM never creates an activity, changes a skill level, or performs progress arithmetic. It receives no employee name or identifier and may only phrase the supplied evidence. Timeout, invalid output or an unsupported numeric claim activates the deterministic fallback.
+
+### AI Explanation Layer
+
+The deterministic recommendation engine decides **what** to recommend and fixes the order. An evidence builder passes only the selected 1–3 activities, target grade, skill levels, critical-skill flags, achievable gains, and a few related history entries to OpenAI. The Responses API returns a schema-validated explanation of **why** each activity fits. The backend checks event IDs, ranks, titles, and numeric claims before returning it.
+
+```text
+Recommendation Engine
+        |
+        v
+Evidence Builder
+        |
+        v
+OpenAI Explanation Service
+        |
+        v
+Structured Explanation
+        |
+        v
+Frontend
+```
+
+`GET /api/v1/employees/{employee_id}/recommendations/` returns its existing `recommendations` plus `ai_explanation`: ordered cards with `event_id`, `rank`, `title`, `headline`, `why_recommended`, `expected_impact`, `history_context`, and `next_step`, and an `overall_summary`. The employee's `preferred_language` selects Russian (`ru`), Kazakh (`kk`), or English (`en`); unknown languages use English. One OpenAI request covers all cards, and a one-hour in-process cache keys the model and evidence. Missing credentials, timeouts, API errors, and invalid output use a multilingual deterministic fallback. The employee page displays each explanation on its matching recommendation card. Core recommendations work without OpenAI.
+
+The engine's existing next-grade target remains authoritative even when `career_goal` is set. Imported `critical_skills` are stored as requirement priority 5 and marked critical in the explanation evidence. The explanation does not infer skill gains from completed history after `last_review_date`; it reports participation status only. Event eligibility, including role, grade, prerequisites, mandatory activities, and the recurring `EV_036` exception, remains in the deterministic engine.
 
 ## Repository
 

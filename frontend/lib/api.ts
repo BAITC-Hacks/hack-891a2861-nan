@@ -1,4 +1,4 @@
-import type { AuthUser, EmployeeProfile, EmployeeSummary, HRDashboard, Locale, Recommendation } from "./types";
+import type { AuthUser, EmployeeProfile, EmployeeSummary, HRDashboard, Locale, Recommendation, RecommendationExplanation } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:18000/api/v1";
 
@@ -26,7 +26,7 @@ export const api = {
   employee: (id: string, locale: Locale) =>
     request<EmployeeProfile>(`/employees/${id}/?locale=${locale}`),
   recommendations: (id: string, locale: Locale) =>
-    request<{ employee_id: string; recommendations: Recommendation[] }>(
+    request<{ employee_id: string; recommendations: Recommendation[]; ai_explanation: RecommendationExplanation | null }>(
       `/employees/${id}/recommendations/?locale=${locale}`,
     ),
   complete: (employeeId: string, eventId: string) =>

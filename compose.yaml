@@ -27,9 +27,8 @@ services:
       POSTGRES_PASSWORD: career_quest
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-      LLM_BASE_URL: ${LLM_BASE_URL:-}
-      LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_MODEL: ${LLM_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
     ports:
       - "${BACKEND_PORT:-18000}:8000"
     volumes:

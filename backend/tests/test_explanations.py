@@ -39,6 +39,8 @@ def test_backend_engineer_evidence_and_fallback(evidence, monkeypatch):
     skill = first["affected_target_skills"][0]
     assert skill["gap"] == skill["required"] - skill["current"]
     assert skill["projected_after_completion"] == skill["current"] + skill["achievable_gain"]
+    assert isinstance(skill["critical"], bool)
+    assert first["prerequisites_met"] is True
     result = explain_recommendations(evidence)
     assert result.recommendations[0].event_id == first["event_id"]
     assert str(skill["current"]) in result.recommendations[0].why_recommended

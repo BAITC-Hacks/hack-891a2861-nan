@@ -10,7 +10,6 @@ from apps.activities.models import ActivityHistory
 from apps.catalog.models import Event, EventSkillGain, GradeRequirement
 from apps.employees.models import Employee
 from apps.employees.services import next_grade_for
-from apps.recommendations.llm import enhance_explanation
 from apps.recommendations.models import RecommendationSnapshot
 from apps.recommendations.scoring import ScoreBreakdown
 
@@ -82,7 +81,6 @@ def recommend(
     limit: int = 3,
     *,
     persist: bool = True,
-    use_llm: bool = True,
 ) -> list[dict]:
     target = next_grade_for(employee)
     if target is None:
@@ -248,18 +246,6 @@ def recommend(
             "score_breakdown": {**asdict(candidate.score), "total": candidate.score.total},
             "engine": ENGINE_VERSION,
         }
-        if rank == 1 and use_llm:
-            explanation = enhance_explanation(
-                event_code=candidate.event.code,
-                facts={
-                    "grade": reasons[0]["message"],
-                    "skill_gap": reasons[1]["message"],
-                    "impact": reasons[2]["message"],
-                    "history": reasons[3]["message"],
-                },
-                fallback=explanation,
-                locale=locale,
-            )
         snapshot = None
         if persist:
             snapshot = RecommendationSnapshot.objects.create(
