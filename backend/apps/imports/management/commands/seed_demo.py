@@ -288,16 +288,16 @@ class Command(BaseCommand):
 
         now = timezone.now()
         histories = [
-            ("E0028", "EV_SPEAKING", "missed", 120, False),
+            ("E0028", "EV_SPEAKING", "no_show", 120, False),
             ("E0028", "EV_SPEAKING", "declined", 80, None),
-            ("E0028", "EV_SPEAKING", "missed", 35, False),
+            ("E0028", "EV_SPEAKING", "no_show", 35, False),
             ("E0028", "EV_DB_ADVANCED", "completed", 170, True),
             ("E0028", "EV_CLOUD_FOUNDATIONS", "completed", 90, True),
             ("E0041", "EV_DB_ADVANCED", "completed", 100, True),
             ("E0041", "EV_SYSTEM_DESIGN", "completed", 60, True),
             ("E0063", "EV_SPEAKING", "completed", 40, True),
             ("E0087", "EV_ARCH_PROJECT", "completed", 75, True),
-            ("E0087", "EV_MENTOR", "missed", 25, False),
+            ("E0087", "EV_MENTOR", "no_show", 25, False),
             ("E0102", "EV_SYSTEM_DESIGN", "completed", 110, True),
         ]
         for employee_id, event_code, status, days, on_time in histories:

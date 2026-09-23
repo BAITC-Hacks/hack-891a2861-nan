@@ -14,7 +14,9 @@ def user_payload(user) -> dict:
         "username": user.username,
         "role": user.role,
         "employee_id": employee.employee_id if employee else None,
-        "display_name": employee.display_name if employee else (user.get_full_name() or user.username),
+        "display_name": (
+            employee.display_name if employee else (user.get_full_name() or user.username)
+        ),
     }
 
 

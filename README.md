@@ -30,12 +30,11 @@ These credentials are only for the synthetic hackathon dataset and must not be u
 
 The first launch applies migrations, loads the supplied Career Quest starter dataset (200 employees, 60 skills, 40 activities and 24 months of history), and creates role-linked demo accounts. Later launches preserve PostgreSQL data and do not reset completed activities.
 
-LLM credentials are optional. Without them, the evidence-grounded deterministic decision engine provides the complete MVP flow. To enable multilingual LLM-enhanced explanations, configure an OpenAI-compatible provider in `.env`:
+OpenAI credentials are optional. Without them, the evidence-grounded deterministic explanation provides the complete MVP flow. To enable AI-enhanced explanations, configure `.env`:
 
 ```dotenv
-LLM_BASE_URL=https://your-provider.example/v1
-LLM_API_KEY=...
-LLM_MODEL=...
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 ## Demonstration flow
@@ -68,8 +67,9 @@ The engine is hybrid and bounded:
 ```text
 validated data
   → hard eligibility filters
-  → next-grade gap features
-  → multi-factor deterministic score
+  → career-goal and skill-gap features
+  → Logistic Regression completion probability
+  → multi-factor hybrid score
   → diversity selection
   → optional LLM explanation of supplied facts
   → schema/evidence validation or deterministic fallback
@@ -78,16 +78,77 @@ validated data
 Base score:
 
 ```text
-0.40 gap coverage
+0.35 gap coverage
 + 0.20 critical skill priority
-+ 0.15 achievable gain
-+ 0.15 participation affinity
++ 0.10 achievable gain
++ 0.15 ML completion probability
++ 0.10 participation affinity
 + 0.10 availability
 - skip-pattern penalty
 - repetition penalty
 ```
 
 An LLM never creates an activity, changes a skill level, or performs progress arithmetic. It receives no employee name or identifier and may only phrase the supplied evidence. Timeout, invalid JSON or an unsupported claim activates the deterministic fallback.
+
+The completion model is the supplied scikit-learn Logistic Regression pipeline. It is a
+bounded ranking signal, not the decision maker: career relevance remains dominant, so an easy
+but irrelevant activity cannot outrank a critical career step. The supplied temporal validation
+set reports ROC-AUC `0.654`, PR-AUC `0.774`, and F1 `0.805`; the raw metrics and coefficients are
+kept under `data/ml/` for reproducibility. The model falls back to smoothed historical rates if
+the artifact is unavailable or incompatible.
+
+### AI Explanation Layer
+
+The recommendation engine decides **what** to recommend. OpenAI only explains **why** the
+already selected activities fit. The backend sends one compact request for the complete Top-3;
+the frontend never calls OpenAI directly.
+
+```text
+Recommendation Engine
+        |
+        v
+Evidence Builder
+        |
+        v
+OpenAI Explanation Service
+        |
+        v
+Structured Explanation
+        |
+        v
+Frontend
+```
+
+Evidence contains only the target, selected event IDs, ranks, exact skill gaps, gains, history
+counts and completion probabilities. It excludes the employee name, manager and raw history.
+The response is validated against the original event IDs and order; unsupported factors,
+changed IDs and fabricated numeric values are rejected. English, Russian and Kazakh are
+supported.
+
+An evidence hash includes the language, model configuration and all recommendation facts.
+Validated explanations are stored with recommendation snapshots and reused until employee
+state or selected recommendations change. LLM latency and fallback status are logged without
+credentials. Missing configuration, timeout, invalid JSON or API failure uses the multilingual
+deterministic explanation. Core recommendation functionality therefore continues to work
+without OpenAI.
+
+Dataset assumptions follow the supplied contract: skill levels are `0–5`; a missing skill is
+treated as level `0`; target requirements and critical skills come from `role_profiles`;
+mandatory and already-completed activities are excluded, except recurring `EV_036`; gains are
+capped by both `gain` and `max_level`; and prerequisites are hard eligibility filters.
+`career_goal: null` falls back to the next grade in the current role. Imported skill levels are
+treated as the authoritative assessment snapshot, so historical completions after
+`last_review_date` are not applied a second time. Only a new completion recorded through this
+application changes progress immediately.
+
+Configuration:
+
+```dotenv
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_TIMEOUT_SECONDS=8
+```
 
 ## Repository
 

@@ -16,6 +16,16 @@ class SkillGap:
 
 
 def next_grade_for(employee: Employee) -> Grade | None:
+    goal = employee.career_goal or {}
+    target_role = goal.get("target_role")
+    target_grade = goal.get("target_grade")
+    if target_role and target_grade:
+        goal_grade = Grade.objects.filter(
+            role__name_en=target_role,
+            name_en=target_grade,
+        ).first()
+        if goal_grade:
+            return goal_grade
     return (
         Grade.objects.filter(role=employee.role, rank__gt=employee.grade.rank)
         .order_by("rank")

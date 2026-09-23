@@ -138,3 +138,10 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+COMPLETION_MODEL_PATH = os.getenv(
+    "COMPLETION_MODEL_PATH", "/data/ml/activity_completion_logistic.joblib"
+)
+COMPLETION_MODEL_METRICS_PATH = os.getenv(
+    "COMPLETION_MODEL_METRICS_PATH", "/data/ml/activity_completion_logistic_metrics.json"
+)

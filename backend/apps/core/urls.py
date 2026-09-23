@@ -1,7 +1,7 @@
 from django.urls import path
 
-from apps.activities.views import CompleteActivityView
 from apps.accounts.views import LoginView, MeView
+from apps.activities.views import CompleteActivityView
 from apps.analytics.views import HRDashboardView
 from apps.employees.views import EmployeeDetailView, EmployeeListView
 from apps.imports.views import DatasetImportView

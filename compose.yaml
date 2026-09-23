@@ -27,13 +27,15 @@ services:
       POSTGRES_PASSWORD: career_quest
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-      LLM_BASE_URL: ${LLM_BASE_URL:-}
-      LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_MODEL: ${LLM_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-8}
     ports:
       - "${BACKEND_PORT:-18000}:8000"
     volumes:
       - ./data/starter:/data/starter:ro
+      - ./data/ml:/data/ml:ro
     depends_on:
       db:
         condition: service_healthy

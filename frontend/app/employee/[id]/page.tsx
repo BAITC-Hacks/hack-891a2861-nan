@@ -79,8 +79,9 @@ export default function EmployeePage({ params }: { params: Promise<{ id: string 
               <div className="recommendation-content">
                 <div className="recommendation-top"><div><span className="format-chip">{item.event.format}</span><h3>{item.event.name}</h3></div><span className="score">{Math.round(item.score * 100)} match</span></div>
                 <p>{item.event.description}</p>
+                <div className="why-answer"><strong>{t.why}</strong><p>{item.explanation.summary}</p></div>
                 <div className="impact-row">{item.impacted_skills.map((skill) => <span key={skill.skill_code}>{skill.skill_name}: {skill.current_level} → {Math.min(skill.current_level + skill.gain, skill.max_level)}</span>)}<span>{item.event.duration_hours} {t.hours}</span></div>
-                <details><summary>{t.why}</summary><div className="reason-grid">{item.explanation.reasons.map((reason) => <div key={reason.factor}><small>{reason.factor.replace("_", " ")}</small><strong>{reason.message}</strong></div>)}</div></details>
+                <details><summary>{locale === "ru" ? "Показать факты и расчёт" : "Show evidence and calculation"}</summary><div className="reason-grid">{item.explanation.reasons.map((reason) => <div key={reason.factor}><small>{reason.factor.replace("_", " ")}</small><strong>{reason.message}</strong></div>)}</div></details>
                 <button className="primary-button" disabled={Boolean(busy)} onClick={() => complete(item.event.code)}>{busy === item.event.code ? t.completing : t.complete}</button>
               </div>
             </article>

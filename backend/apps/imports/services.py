@@ -112,7 +112,12 @@ def import_dataset(*, employees_file, skills_file, events_file, history_file) ->
             counts["role_profiles"] += 1
         except (KeyError, TypeError, ValueError, Skill.DoesNotExist) as exc:
             errors.append(
-                {"file": "skills.json", "section": "role_profiles", "index": index, "message": str(exc)}
+                {
+                    "file": "skills.json",
+                    "section": "role_profiles",
+                    "index": index,
+                    "message": str(exc),
+                }
             )
 
     for index, item in enumerate(employees):
@@ -145,7 +150,14 @@ def import_dataset(*, employees_file, skills_file, events_file, history_file) ->
                 seen_skills.add(skill_code)
             employee.skill_levels.exclude(skill_id__in=seen_skills).delete()
             counts["employees"] += 1
-        except (KeyError, TypeError, ValueError, Role.DoesNotExist, Grade.DoesNotExist, Skill.DoesNotExist) as exc:
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            Role.DoesNotExist,
+            Grade.DoesNotExist,
+            Skill.DoesNotExist,
+        ) as exc:
             errors.append({"file": "employees.json", "index": index, "message": str(exc)})
 
     for index, item in enumerate(events):

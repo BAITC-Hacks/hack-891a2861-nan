@@ -21,9 +21,18 @@ class EmployeeRecommendationsView(APIView):
         employee = get_object_or_404(
             Employee.objects.select_related("role", "grade"), pk=employee_id
         )
+        locale = request_locale(request)
+        recommendations = recommend(employee, locale)
+        explanation = recommendations[0].get("explanation", {}) if recommendations else {}
         return Response(
             {
                 "employee_id": employee.employee_id,
-                "recommendations": recommend(employee, request_locale(request)),
+                "recommendations": recommendations,
+                "ai_explanation": {
+                    "language": locale,
+                    "source": explanation.get("ai_source", "fallback"),
+                    "engine": explanation.get("engine", "hybrid-ml-v2"),
+                    "items": [item["explanation"] for item in recommendations],
+                },
             }
         )
