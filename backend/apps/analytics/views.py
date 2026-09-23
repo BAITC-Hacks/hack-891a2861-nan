@@ -1,3 +1,5 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,5 +11,6 @@ from apps.employees.views import request_locale
 class HRDashboardView(APIView):
     permission_classes = [IsHROrDemo]
 
+    @extend_schema(operation_id="hr_dashboard", responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         return Response(dashboard(request_locale(request)))

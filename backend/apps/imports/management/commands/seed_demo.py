@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
+from apps.accounts.models import User
 from apps.activities.models import ActivityHistory
 from apps.catalog.models import Event, EventSkillGain, Grade, GradeRequirement, Role, Skill
 from apps.employees.models import Employee, EmployeeSkill
@@ -22,6 +23,14 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        admin, _ = User.objects.get_or_create(
+            username="admin",
+            defaults={"email": "admin@example.invalid", "role": User.Role.ADMIN},
+        )
+        admin.is_staff = True
+        admin.is_superuser = True
+        admin.set_password("careerquest-demo")
+        admin.save()
         if options["if_empty"] and Employee.objects.exists():
             self.stdout.write("Employee data already exists; demo seed skipped")
             return

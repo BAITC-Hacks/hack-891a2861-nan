@@ -1,4 +1,6 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,6 +23,10 @@ def request_locale(request) -> str:
 class EmployeeListView(APIView):
     permission_classes = [IsAuthenticatedOrDemo]
 
+    @extend_schema(
+        operation_id="employee_list",
+        responses={200: EmployeeListSerializer(many=True)},
+    )
     def get(self, request):
         employees = Employee.objects.select_related("role", "grade")
         return Response(EmployeeListSerializer(employees, many=True).data)
@@ -29,6 +35,7 @@ class EmployeeListView(APIView):
 class EmployeeDetailView(APIView):
     permission_classes = [IsAuthenticatedOrDemo]
 
+    @extend_schema(operation_id="employee_detail", responses={200: OpenApiTypes.OBJECT})
     def get(self, request, employee_id: str):
         if not can_access_employee(request, employee_id):
             raise PermissionDenied("You cannot access this employee profile")

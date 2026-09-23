@@ -1,3 +1,5 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import parsers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +12,11 @@ class DatasetImportView(APIView):
     permission_classes = [IsHROrDemo]
     parser_classes = [parsers.MultiPartParser]
 
+    @extend_schema(
+        operation_id="dataset_import",
+        request={"multipart/form-data": OpenApiTypes.OBJECT},
+        responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         required = ["employees", "skills", "events", "history"]
         missing = [name for name in required if name not in request.FILES]

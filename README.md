@@ -21,6 +21,8 @@ Open:
 - API documentation: http://localhost:8000/api/docs/
 - Django Admin: http://localhost:8000/admin/
 
+Demo Admin credentials are `admin` / `careerquest-demo`. They exist only in the synthetic demo seed and must not be used in a real deployment.
+
 The first launch applies migrations and loads a small synthetic demonstration dataset. Later launches preserve PostgreSQL data and do not reset completed activities.
 
 LLM credentials are optional. Without them, the evidence-grounded deterministic decision engine provides the complete MVP flow. To enable multilingual LLM-enhanced explanations, configure an OpenAI-compatible provider in `.env`:

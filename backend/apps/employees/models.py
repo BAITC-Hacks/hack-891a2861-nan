@@ -39,7 +39,10 @@ class EmployeeSkill(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["employee", "skill"], name="unique_employee_skill")
+            models.UniqueConstraint(fields=["employee", "skill"], name="unique_employee_skill"),
+            models.CheckConstraint(
+                condition=models.Q(level__gte=0, level__lte=5), name="employee_skill_level_0_5"
+            ),
         ]
 
     def __str__(self) -> str:

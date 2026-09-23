@@ -69,7 +69,14 @@ class GradeRequirement(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["grade", "skill"], name="unique_grade_skill")
+            models.UniqueConstraint(fields=["grade", "skill"], name="unique_grade_skill"),
+            models.CheckConstraint(
+                condition=models.Q(required_level__gte=0, required_level__lte=5),
+                name="grade_required_level_0_5",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(priority__gte=1), name="grade_priority_positive"
+            ),
         ]
 
     def __str__(self) -> str:
@@ -116,7 +123,14 @@ class EventSkillGain(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["event", "skill"], name="unique_event_skill_gain")
+            models.UniqueConstraint(fields=["event", "skill"], name="unique_event_skill_gain"),
+            models.CheckConstraint(
+                condition=models.Q(gain__gte=1, gain__lte=5), name="event_gain_1_5"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(max_level__gte=1, max_level__lte=5),
+                name="event_max_level_1_5",
+            ),
         ]
 
     def __str__(self) -> str:

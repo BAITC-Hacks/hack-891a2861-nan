@@ -1,4 +1,6 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,6 +14,7 @@ from apps.recommendations.engine import recommend
 class EmployeeRecommendationsView(APIView):
     permission_classes = [IsAuthenticatedOrDemo]
 
+    @extend_schema(operation_id="employee_recommendations", responses={200: OpenApiTypes.OBJECT})
     def get(self, request, employee_id: str):
         if not can_access_employee(request, employee_id):
             raise PermissionDenied("You cannot access this employee profile")

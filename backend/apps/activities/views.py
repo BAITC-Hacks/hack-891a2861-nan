@@ -1,6 +1,8 @@
 import uuid
 
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -15,6 +17,11 @@ from apps.employees.models import Employee
 class CompleteActivityView(APIView):
     permission_classes = [IsAuthenticatedOrDemo]
 
+    @extend_schema(
+        operation_id="activity_complete",
+        request=None,
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def post(self, request, employee_id: str, event_id: str):
         if not can_access_employee(request, employee_id):
             raise PermissionDenied("You cannot update this employee profile")
