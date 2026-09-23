@@ -6,9 +6,7 @@ from .models import User
 
 @admin.register(User)
 class CareerQuestUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
-        ("Career Quest", {"fields": ("role", "organisation_unit")}),
-    )
+    fieldsets = UserAdmin.fieldsets + (("Career Quest", {"fields": ("role", "organisation_unit")}),)
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("Career Quest", {"fields": ("role", "organisation_unit")}),
     )

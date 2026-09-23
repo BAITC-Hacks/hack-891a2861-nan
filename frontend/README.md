@@ -1,16 +1,11 @@
-# Frontend
+# Career Quest Frontend
 
-Frontend Career Quest will contain the Next.js application for employee profiles and trajectories, explainable recommendations, progress updates, HR analytics and dataset imports.
+Next.js frontend for the employee journey, explainable recommendations, progress updates, HR analytics and dataset imports.
 
-Planned structure:
-
-```text
-frontend/
-├── app/
-├── components/
-├── features/
-├── lib/
-└── tests/
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
 ```
 
-Framework scaffolding and dependencies will be added during frontend implementation.
+The app runs at `http://localhost:3000` and expects the backend at `http://localhost:8000` by default.

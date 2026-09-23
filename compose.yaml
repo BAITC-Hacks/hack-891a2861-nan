@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: career_quest
+      POSTGRES_USER: career_quest
+      POSTGRES_PASSWORD: career_quest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U career_quest -d career_quest"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  backend:
+    build: ./backend
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-hackathon-demo-secret-change-me}
+      DJANGO_DEBUG: "false"
+      DJANGO_DEMO_MODE: "true"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      DJANGO_CORS_ALLOWED_ORIGINS: http://localhost:3000
+      DJANGO_DB_ENGINE: postgres
+      POSTGRES_DB: career_quest
+      POSTGRES_USER: career_quest
+      POSTGRES_PASSWORD: career_quest
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready/')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

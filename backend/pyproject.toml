@@ -12,7 +12,9 @@ dependencies = [
     "djangorestframework>=3.16,<4",
     "django-cors-headers>=4.7,<5",
     "drf-spectacular>=0.28,<1",
+    "gunicorn>=23,<24",
     "psycopg[binary]>=3.2,<4",
+    "whitenoise>=6.9,<7",
 ]
 
 [project.optional-dependencies]
@@ -39,4 +41,4 @@ select = ["E", "F", "I", "UP", "B", "DJ"]
 ignore = ["DJ001"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/migrations/*.py" = ["E501"]
+"**/migrations/*.py" = ["E501", "I001"]

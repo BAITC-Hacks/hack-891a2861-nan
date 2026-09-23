@@ -12,3 +12,5 @@ staticfiles/
 media/
 node_modules/
 .next/
+*.tsbuildinfo
+*.egg-info/

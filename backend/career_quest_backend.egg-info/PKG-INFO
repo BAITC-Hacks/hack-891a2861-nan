@@ -7,7 +7,9 @@ Requires-Dist: Django<6.1,>=5.2
 Requires-Dist: djangorestframework<4,>=3.16
 Requires-Dist: django-cors-headers<5,>=4.7
 Requires-Dist: drf-spectacular<1,>=0.28
+Requires-Dist: gunicorn<24,>=23
 Requires-Dist: psycopg[binary]<4,>=3.2
+Requires-Dist: whitenoise<7,>=6.9
 Provides-Extra: dev
 Requires-Dist: pytest<10,>=8.3; extra == "dev"
 Requires-Dist: pytest-django<5,>=4.10; extra == "dev"
