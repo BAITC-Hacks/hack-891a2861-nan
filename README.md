@@ -1,217 +1,235 @@
 # Career Quest
 
-Explainable AI navigator for employee development, built for the Halyk Bank track at HackAlem AI.
+**AI-навигатор развития сотрудников для трека Halyk Bank на HackAlem AI.**
 
-Career Quest shows an employee their next-grade trajectory, selects 1–3 relevant development activities from profile, skill gaps and participation history, explains every choice with evidence, and updates progress after completion. HR receives an aggregated capability and participation view without public employee rankings.
+Career Quest превращает разрозненные HR-активности в понятную карьерную траекторию. Сотрудник видит требования следующего грейда, получает 1–3 персональные рекомендации и подробное объяснение, зачем ему нужна каждая активность. HR получает агрегированный обзор дефицитов навыков и участия без публичного рейтинга сотрудников.
 
-> Русская версия описания находится [ниже](#о-проекте).
+## Содержание
 
-## Run the complete application
+- [Проблема и пользователи](#проблема-и-пользователи)
+- [Что реализовано](#что-реализовано)
+- [Как работает решение](#как-работает-решение)
+- [Технологии](#технологии)
+- [Архитектура](#архитектура)
+- [Установка и запуск](#установка-и-запуск)
+- [Как проверить решение](#как-проверить-решение)
+- [Данные и интеграции](#данные-и-интеграции)
+- [Тестирование](#тестирование)
+- [Ограничения](#ограничения)
+- [Развёрнутая версия](#развёрнутая-версия)
 
-Requirements: Docker with Compose support.
+## Проблема и пользователи
 
-```bash
-cp .env.example .env
-docker compose up --build
-```
+Сотрудники получают уведомления об обучении, менторстве и других HR-активностях, но не всегда понимают, как эти действия связаны с карьерным ростом. Из-за этого обязательные программы выполняются формально, а добровольные активности получают низкую вовлечённость.
 
-Open:
+Career Quest предназначен для двух ролей:
 
-- Web application: http://localhost:3000
-- API documentation: http://localhost:18000/api/docs/
-- Django Admin: http://localhost:18000/admin/
+- **сотрудник** — видит только собственный профиль, историю, карьерную траекторию и рекомендации;
+- **HR** — видит агрегированную аналитику по навыкам и участию, а также может импортировать новый датасет.
 
-Demo sign-in credentials:
+Проект работает только с синтетическими данными из набора хакатона.
 
-- HR: `hr` / `hr-demo`
-- Employee: `e0001` / `employee-demo` (any official employee ID, lower-case, uses the same demo password)
+## Что реализовано
 
-These credentials are only for the synthetic hackathon dataset and must not be used in a real deployment.
+### Кабинет сотрудника
 
-The first launch applies migrations, loads the supplied Career Quest starter dataset (200 employees, 60 skills, 40 activities and 24 months of history), and creates role-linked demo accounts. Later launches preserve PostgreSQL data and do not reset completed activities.
+- профиль с ролью, грейдом, стажем и подразделением;
+- уровни навыков по шкале `0–5`;
+- траектория от текущего к целевому грейду;
+- процент готовности и список разрывов по навыкам;
+- история пройденных и пропущенных активностей;
+- 1–3 персональные рекомендации;
+- развёрнутый ответ «Почему мне нужна эта активность?»;
+- проверяемые факты и расчёт под текстовым объяснением;
+- завершение активности с немедленным пересчётом навыков и траектории.
 
-OpenAI credentials are optional. Without them, the evidence-grounded deterministic explanation provides the complete MVP flow. To enable AI-enhanced explanations, configure `.env`:
+### Рекомендательная система
 
-```dotenv
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4.1-mini
-```
+- фильтрация по роли, грейду, обязательности, prerequisites и прошлым завершениям;
+- исключение обязательных мероприятий из рекомендаций;
+- учёт карьерной цели и `focus_skills`, если они заданы;
+- учёт требований целевого профиля и критических навыков;
+- учёт положительной и отрицательной истории участия;
+- прогноз вероятности завершения с помощью Logistic Regression;
+- штраф за повторные незавершённые похожие активности;
+- разнообразие форматов в Top-3;
+- повторная рекомендация завершённого события разрешена только для recurring-события `EV_036`.
 
-## Demonstration flow
-
-1. Sign in as employee `e0028` with password `employee-demo`.
-2. Review the Middle → Senior trajectory and skill gaps.
-3. Inspect the top recommendation and its grade, gap, impact and history evidence.
-4. Notice that Public Speaking is the lowest skill but is penalised after three similar skips; critical System Design work ranks higher.
-5. Complete an activity and observe the skill level and readiness update.
-6. Sign out, then sign in as `hr` / `hr-demo` to inspect common gaps, recommendation coverage and activity participation.
-7. As HR, open Import Data to upload additional judge profiles in the starter-kit-compatible format.
-
-## Implemented MVP requirements
-
-| Requirement | Implementation |
-|---|---|
-| Profile and trajectory | Arbitrary employee selection, skills, current/target grade, gaps, history and readiness |
-| 1–3 recommendations | Eligibility, multi-factor scoring, diversity selection and optional LLM explanation |
-| Explainability | Grade, next-grade gap, achievable gain and participation-history evidence plus score breakdown |
-| Progress update | Transactional, idempotent `gain/max_level` application and immediate trajectory refresh |
-| HR view | Frequent skill gaps, employees without a step, participation and completion rates |
-| Judge profiles | Atomic multipart import of employees, skills, events and history |
-| Privacy/security | Employee/HR policy boundary, scoped APIs, minimised LLM payload, no public rankings |
-| Reproducibility | Docker Compose, migrations, deterministic demo seed, tests and OpenAPI |
-
-## Recommendation approach
-
-The engine is hybrid and bounded:
+Итоговый score:
 
 ```text
-validated data
-  → hard eligibility filters
-  → career-goal and skill-gap features
-  → Logistic Regression completion probability
-  → multi-factor hybrid score
-  → diversity selection
-  → optional LLM explanation of supplied facts
-  → schema/evidence validation or deterministic fallback
+0.35 × покрытие skill gap
++ 0.20 × критичность навыка
++ 0.10 × достижимый прирост
++ 0.15 × ML-вероятность завершения
++ 0.10 × соответствие истории участия
++ 0.10 × доступность
+- штраф за негативный паттерн
+- штраф за повторение
 ```
 
-Base score:
+### AI-объяснение
 
-```text
-0.35 gap coverage
-+ 0.20 critical skill priority
-+ 0.10 achievable gain
-+ 0.15 ML completion probability
-+ 0.10 participation affinity
-+ 0.10 availability
-- skip-pattern penalty
-- repetition penalty
-```
-
-An LLM never creates an activity, changes a skill level, or performs progress arithmetic. It receives no employee name or identifier and may only phrase the supplied evidence. Timeout, invalid JSON or an unsupported claim activates the deterministic fallback.
-
-The completion model is the supplied scikit-learn Logistic Regression pipeline. It is a
-bounded ranking signal, not the decision maker: career relevance remains dominant, so an easy
-but irrelevant activity cannot outrank a critical career step. The supplied temporal validation
-set reports ROC-AUC `0.654`, PR-AUC `0.774`, and F1 `0.805`; the raw metrics and coefficients are
-kept under `data/ml/` for reproducibility. The model falls back to smoothed historical rates if
-the artifact is unavailable or incompatible.
-
-### AI Explanation Layer
-
-The recommendation engine decides **what** to recommend. OpenAI only explains **why** the
-already selected activities fit. The backend sends one compact request for the complete Top-3;
-the frontend never calls OpenAI directly.
+Рекомендательный движок определяет, **что** рекомендовать. OpenAI, если настроен, объясняет, **почему** уже выбранные активности полезны сотруднику.
 
 ```text
 Recommendation Engine
-        |
-        v
+        ↓
 Evidence Builder
-        |
-        v
+        ↓
 OpenAI Explanation Service
-        |
-        v
+        ↓
 Structured Explanation
-        |
-        v
+        ↓
 Frontend
 ```
 
-Evidence contains only the target, selected event IDs, ranks, exact skill gaps, gains, history
-counts and completion probabilities. It excludes the employee name, manager and raw history.
-The response is validated against the original event IDs and order; unsupported factors,
-changed IDs and fabricated numeric values are rejected. English, Russian and Kazakh are
-supported.
+- один компактный запрос формирует объяснения сразу для всего Top-3;
+- в модель не передаются ФИО, manager ID и полная история сотрудника;
+- evidence содержит целевой грейд, выбранные event ID, skill gaps, gain, историю и вероятность завершения;
+- ответ проверяется: AI не может изменить event ID, порядок рекомендаций или числовые значения;
+- поддерживаются объяснения на английском, русском и казахском языках;
+- при отсутствии ключа, таймауте, ошибке API или некорректном JSON используется подробный детерминированный fallback;
+- evidence hash и `RecommendationSnapshot` позволяют повторно использовать объяснение, пока данные сотрудника и набор рекомендаций не изменились;
+- логируется время вызова и источник объяснения, но не секреты.
 
-An evidence hash includes the language, model configuration and all recommendation facts.
-Validated explanations are stored with recommendation snapshots and reused until employee
-state or selected recommendations change. LLM latency and fallback status are logged without
-credentials. Missing configuration, timeout, invalid JSON or API failure uses the multilingual
-deterministic explanation. Core recommendation functionality therefore continues to work
-without OpenAI.
+Основная функциональность полностью работает без OpenAI.
 
-Dataset assumptions follow the supplied contract: skill levels are `0–5`; a missing skill is
-treated as level `0`; target requirements and critical skills come from `role_profiles`;
-mandatory and already-completed activities are excluded, except recurring `EV_036`; gains are
-capped by both `gain` and `max_level`; and prerequisites are hard eligibility filters.
-`career_goal: null` falls back to the next grade in the current role. Imported skill levels are
-treated as the authoritative assessment snapshot, so historical completions after
-`last_review_date` are not applied a second time. Only a new completion recorded through this
-application changes progress immediately.
+### HR-экран
 
-Configuration:
+- количество сотрудников;
+- общий completion rate;
+- наиболее частые skill gaps;
+- сотрудники без доступного следующего шага;
+- участие, завершения, пропуски и отказы по активностям;
+- импорт четырёх файлов датасета через интерфейс.
 
-```dotenv
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4.1-mini
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_TIMEOUT_SECONDS=8
-```
+### Безопасность и воспроизводимость
 
-## Repository
+- отдельные права сотрудника и HR проверяются backend-сервисом;
+- сотрудник не может открыть профиль другого сотрудника;
+- токен входа подписывается Django и действует 12 часов;
+- изменение прогресса транзакционно и поддерживает `Idempotency-Key`;
+- импорт выполняется атомарно;
+- приложение запускается через Docker Compose одной командой;
+- доступны health checks и Swagger/OpenAPI.
+
+## Как работает решение
+
+1. При первом запуске backend применяет миграции и загружает стартовый датасет в PostgreSQL.
+2. Пользователь входит под ролью сотрудника или HR.
+3. Для сотрудника backend определяет целевой профиль из `career_goal`. Если цель отсутствует, используется следующий грейд текущей роли.
+4. Требования `role_profiles.required_skills` сравниваются с текущими навыками. Отсутствующий навык считается равным `0`.
+5. Из каталога исключаются обязательные, неподходящие, недоступные и уже завершённые события. Проверяются prerequisites.
+6. Для оставшихся событий рассчитываются карьерная полезность, ожидаемый прирост, история участия и вероятность завершения.
+7. Движок формирует Top-3 и evidence для каждого результата.
+8. OpenAI формирует один структурированный ответ для Top-3 либо включается локальный fallback.
+9. Frontend показывает развёрнутое объяснение и раскрываемый блок с исходными фактами.
+10. После завершения активности применяются правила `gain` и `max_level`, затем пересчитывается готовность к целевому грейду.
+
+## Технологии
+
+### Backend
+
+- Python `3.12+`;
+- Django `5.2–6.0`;
+- Django REST Framework;
+- PostgreSQL 17;
+- psycopg;
+- Gunicorn;
+- django-cors-headers;
+- drf-spectacular — OpenAPI и Swagger UI;
+- WhiteNoise — статические файлы;
+- pytest, pytest-django и Ruff — тестирование и проверка кода.
+
+### Frontend
+
+- TypeScript 5.8;
+- Next.js 16;
+- React 19;
+- ESLint.
+
+### ML и AI
+
+- scikit-learn;
+- pandas;
+- joblib;
+- Logistic Regression для оценки вероятности завершения активности;
+- OpenAI Chat Completions API для опционального объяснения рекомендаций;
+- evidence-grounded fallback без внешнего API.
+
+### Инфраструктура
+
+- Docker;
+- Docker Compose;
+- health checks для PostgreSQL и backend.
+
+## Архитектура
 
 ```text
-backend/       Django, DRF, recommendation engine, imports and tests
-frontend/      Next.js bilingual employee and HR application
-docs/          architecture, system design, decisions and dataset contract
-compose.yaml   PostgreSQL + backend + frontend one-command runtime
+┌─────────────────────┐
+│ Next.js Frontend    │
+│ employee / HR views │
+└──────────┬──────────┘
+           │ REST + Bearer token
+           ▼
+┌────────────────────────────────────────────┐
+│ Django REST API                            │
+│                                            │
+│ Auth ─ Employee/Profile ─ Activity service │
+│                  │                         │
+│                  ▼                         │
+│       Recommendation Engine                │
+│       ├─ eligibility filters               │
+│       ├─ multi-factor scoring              │
+│       ├─ completion ML model               │
+│       └─ diversity selection               │
+│                  │                         │
+│                  ▼                         │
+│       Evidence + Explanation Service       │
+│       ├─ OpenAI, если настроен             │
+│       └─ deterministic fallback            │
+│                                            │
+│ HR Analytics ─ Dataset Import              │
+└──────────┬─────────────────────────────────┘
+           │ Django ORM
+           ▼
+┌─────────────────────┐
+│ PostgreSQL          │
+│ profiles, history,  │
+│ skills, snapshots   │
+└─────────────────────┘
 ```
 
-Key documentation:
+Структура репозитория:
 
-- [High-Level System Design](docs/SYSTEM_DESIGN.md)
-- [Detailed Architecture](docs/ARCHITECTURE.md)
-- [Architecture Decisions](docs/DECISIONS.md)
-- [Dataset Contract](docs/DATASET.md)
-- [Backend Guide](backend/README.md)
-- [Frontend Guide](frontend/README.md)
-
-## Local development
-
-Backend:
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
-cp .env.example .env
-python manage.py migrate
-python manage.py load_starter_data --if-empty --path ../data/starter
-python manage.py runserver
+```text
+backend/       Django API, доменные сервисы, ML и тесты
+frontend/      Next.js приложение
+data/starter/  стартовые JSON/CSV
+data/ml/       модель, обучающая выборка, метрики и коэффициенты
+docs/          архитектура, системный дизайн и контракт данных
+compose.yaml   локальная инфраструктура
 ```
 
-Frontend:
+Дополнительная документация:
 
-```bash
-cd frontend
-npm install
-cp .env.example .env.local
-npm run dev
-```
+- [System Design](docs/SYSTEM_DESIGN.md)
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Архитектурные решения](docs/DECISIONS.md)
+- [Контракт датасета](docs/DATASET.md)
+- [Backend](backend/README.md)
+- [Frontend](frontend/README.md)
 
-Verification:
+## Установка и запуск
 
-```bash
-cd backend && pytest && ruff check . && python manage.py check
-cd frontend && npm run lint && npx tsc --noEmit && npm run build
-```
+### Вариант 1 — Docker Compose
 
-## Production note
+Требования:
 
-Compose runs with `DJANGO_DEMO_MODE=false`: signed authentication and employee/HR authorization are enforced by the backend. A real deployment should replace the hackathon credentials with corporate OIDC/JWT and add HR organisational scopes. The custom user model and server-side permission boundary are prepared for that integration.
-
----
-
-## О проекте
-
-Career Quest — AI-навигатор развития сотрудника для трека Halyk Bank на HackAlem AI.
-
-Система показывает траекторию к следующему грейду, находит 1–3 релевантные активности по профилю, разрывам в навыках и истории участия, объясняет выбор проверяемыми фактами и пересчитывает прогресс после выполнения.
-
-### Запуск
+- Docker;
+- Docker Compose v2;
+- свободные порты `3000` и `18000`.
 
 ```bash
 cp .env.example .env
@@ -220,26 +238,191 @@ docker compose up --build
 
 После запуска:
 
-- интерфейс: http://localhost:3000
-- Swagger/OpenAPI: http://localhost:18000/api/docs/
-- Django Admin: http://localhost:18000/admin/
+- приложение: <http://localhost:3000>
+- Swagger UI: <http://localhost:18000/api/docs/>
+- Django Admin: <http://localhost:18000/admin/>
+- readiness check: <http://localhost:18000/api/v1/health/ready/>
 
-При первом запуске загружается официальный синтетический датасет и создаются ролевые аккаунты. Повторный запуск не перезаписывает прогресс. LLM-ключ не обязателен: без него полный core flow работает на детерминированном explainable engine.
+Первый запуск автоматически:
 
-Аккаунты для демонстрации:
+1. создаёт PostgreSQL;
+2. применяет миграции;
+3. загружает `data/starter`;
+4. создаёт демонстрационные аккаунты.
 
-- HR: `hr` / `hr-demo`
-- сотрудник: `e0001` / `employee-demo` (можно использовать любой ID сотрудника в нижнем регистре)
+Повторные запуски сохраняют PostgreSQL volume и прогресс сотрудников.
 
-### Что показать жюри
+Остановить приложение:
 
-1. Войти как `e0028` / `employee-demo`.
-2. Показать траекторию Middle → Senior.
-3. Раскрыть «Почему этот шаг»: грейд, gap, эффект и история.
-4. Обратить внимание: Public Speaking ниже всего, но после трёх пропусков и при критичном System Design он не становится top-1.
-5. Завершить активность и показать новые skill level и readiness.
-6. Выйти и войти как `hr` / `hr-demo`, затем показать HR-экран и импорт проверочных профилей.
+```bash
+docker compose down
+```
 
-### Ключевое решение
+Полностью удалить локальную базу и заново загрузить seed:
 
-LLM не является source of truth. Допустимость события, skill arithmetic и base score считаются кодом. LLM может только сформулировать объяснение из переданных фактов. Это даёт проверяемость, privacy и fallback при сбое внешней модели.
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+> Команда с `-v` удаляет все локальные изменения прогресса.
+
+### Настройка OpenAI
+
+OpenAI не обязателен. Для включения AI-текста заполните `.env`:
+
+```dotenv
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_TIMEOUT_SECONDS=8
+```
+
+После изменения переменных перезапустите сервисы:
+
+```bash
+docker compose up --build -d
+```
+
+Реальный API-ключ в репозитории не хранится.
+
+### Локальная разработка без Docker
+
+Backend:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+python manage.py migrate
+python manage.py load_starter_data --if-empty --path ../data/starter
+python manage.py runserver 0.0.0.0:8000
+```
+
+Frontend в отдельном терминале:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+При локальном запуске без Docker по умолчанию backend использует SQLite, если не заданы переменные PostgreSQL.
+
+## Как проверить решение
+
+### Сценарий сотрудника
+
+1. Откройте <http://localhost:3000/login>.
+2. Выберите роль **Employee**.
+3. Войдите как `e0028` с паролем `employee-demo`.
+4. Проверьте профиль, навыки и траекторию `Middle → Senior`.
+5. Изучите Top-3 и блок «Почему этот шаг».
+6. Обратите внимание: низкий Public Speaking не обязан становиться рекомендацией №1 — учитываются критичность System Design и история участия.
+7. Раскройте «Show evidence and calculation» и сопоставьте объяснение с уровнями навыков и историей.
+8. Нажмите завершение рекомендованной активности.
+9. Убедитесь, что изменились уровень навыка и процент готовности.
+
+### Сценарий HR
+
+1. Выйдите из аккаунта сотрудника.
+2. Войдите как `hr` с паролем `hr-demo`.
+3. Проверьте частые skill gaps, completion rate и статистику участия.
+4. Откройте экран импорта и убедитесь, что он принимает четыре файла стартового формата.
+
+Доступен вход для любого стартового сотрудника: логин — employee ID в нижнем регистре, например `e0001`, пароль — `employee-demo`.
+
+## Данные и интеграции
+
+### Стартовый датасет
+
+При запуске используются:
+
+- `data/starter/employees.json` — 200 синтетических профилей;
+- `data/starter/events.json` — 40 событий;
+- `data/starter/skills.json` — 60 навыков и role profiles;
+- `data/starter/activity_history.csv` — 24 месяца истории, 2743 записи.
+
+Правила данных, реализованные в коде:
+
+- уровень навыка находится в диапазоне `0–5`;
+- отсутствующий навык означает уровень `0`;
+- требования берутся из `role_profiles.required_skills`;
+- `critical_skills` получают повышенный приоритет;
+- обязательные активности не рекомендуются;
+- прирост ограничивается `gain`, `max_level` и верхней границей `5`;
+- prerequisites являются жёстким фильтром;
+- завершённые события обычно не рекомендуются повторно;
+- исключение для повторяемого события — `EV_036`;
+- `career_goal: null` означает переход к следующему грейду текущей роли.
+
+Импортированный уровень навыков считается актуальным assessment snapshot. Исторические завершения после `last_review_date` повторно автоматически не применяются. Новый completion через приложение обновляет прогресс сразу.
+
+### ML-артефакты
+
+В `data/ml/` находятся:
+
+- `activity_completion_logistic.joblib`;
+- `activity_completion_logistic.csv`;
+- `activity_completion_logistic_metrics.json`;
+- `activity_completion_logistic_coefficients.csv`.
+
+Зафиксированные в файле метрик показатели temporal validation:
+
+- ROC-AUC: `0.654`;
+- PR-AUC: `0.774`;
+- F1: `0.805`.
+
+Если joblib-модель недоступна или несовместима, backend использует сглаженные исторические completion rates.
+
+### Внешняя интеграция
+
+Единственная опциональная внешняя интеграция — OpenAI API. Векторная база, RAG, web search и multi-agent pipeline не используются.
+
+## Тестирование
+
+Backend:
+
+```bash
+cd backend
+pytest
+ruff check .
+python manage.py check
+python manage.py makemigrations --check --dry-run
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+Тесты OpenAI используют mocks и не расходуют API-кредиты. Покрыты fallback без ключа, ошибка API, три языка, нейтральное описание негативной истории, защита ID и числовых фактов, а также один вызов для Top-3.
+
+## Ограничения
+
+- Это hackathon MVP, а не production HR-система.
+- Используется общий демонстрационный пароль сотрудников.
+- Подписанные токены не имеют refresh flow и серверного revoke/logout списка.
+- Корпоративный OIDC/SSO не подключён.
+- Для HR не реализованы ограничения по подразделениям: HR-роль видит общую агрегированную статистику.
+- Frontend переключается между русским и английским; казахское объяснение доступно через backend параметр `locale=kk`, но отдельного переключателя `KK` в UI пока нет.
+- После импорта новых employee ID пользовательские аккаунты для них автоматически не создаются; импортированные профили доступны данным и HR API, но для входа потребуется отдельное создание пользователя.
+- HR dashboard вычисляет часть агрегатов во время запроса; отдельный background worker и Redis-кэш не используются.
+- Без `OPENAI_API_KEY` показывается подробный шаблонный fallback, а не сгенерированный OpenAI текст.
+- Качество рекомендаций зависит от полноты синтетического профиля, истории и каталога событий.
+- Публичный рейтинг сотрудников намеренно отсутствует.
+
+## Развёрнутая версия
+
+Публичная deployed-версия в репозитории не указана. Решение воспроизводится локально через Docker Compose:
+
+<http://localhost:3000>
+
+## Лицензия и данные
+
+Отдельный файл лицензии в репозитории отсутствует. Датасет синтетический и предназначен для демонстрации решения в рамках хакатона.
